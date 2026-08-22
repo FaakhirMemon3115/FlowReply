@@ -1,3 +1,4 @@
+// Main application entry point for FlowReply Express backend
 import express from "express";
 import helmet from "helmet";
 import cors from "cors";
