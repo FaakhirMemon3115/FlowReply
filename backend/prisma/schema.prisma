@@ -85,7 +85,7 @@ model AuditLog {
   businessId  String
   userId      String?
   action      String
-  payload     Json?
+  payload     String?
   createdAt   DateTime @default(now())
 }
 
