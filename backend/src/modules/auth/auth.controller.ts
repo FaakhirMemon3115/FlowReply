@@ -1,7 +1,7 @@
 // src/modules/auth/auth.controller.ts
 import { Request, Response, NextFunction } from "express";
-import { registerUser, loginUser, refreshAccessToken, logoutUser } from "../services/auth.service";
-import { validateRegister, validateLogin } from "../validation/auth.schema";
+import { registerUser, loginUser, refreshAccessToken, logoutUser } from "./auth.service";
+import { validateRegister, validateLogin } from "./validation/auth.schema";
 
 export const register = async (req: Request, res: Response, next: NextFunction) => {
   try {

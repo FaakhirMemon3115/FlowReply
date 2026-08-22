@@ -1,10 +1,7 @@
-// src/main.ts
 import express from "express";
 import helmet from "helmet";
 import cors from "cors";
 import dotenv from "dotenv";
-import morgan from "morgan";
-import { json, urlencoded } from "body-parser";
 import { initPrisma } from "./utils/prisma";
 import authRouter from "./modules/auth/auth.router";
 import businessRouter from "./modules/business/business.router";
@@ -15,9 +12,15 @@ const app = express();
 
 app.use(helmet());
 app.use(cors({ origin: process.env.CORS_ORIGIN || "*", credentials: true }));
-app.use(morgan("dev"));
-app.use(json({ limit: "2mb" }));
-app.use(urlencoded({ extended: true }));
+
+// Custom logging middleware replacing morgan
+app.use((req, res, next) => {
+  console.log(`[${new Date().toISOString()}] ${req.method} ${req.path}`);
+  next();
+});
+
+app.use(express.json({ limit: "2mb" }));
+app.use(express.urlencoded({ extended: true }));
 
 // Basic health check
 app.get("/health", (_req, res) => res.json({ status: "ok", timestamp: new Date().toISOString() }));
