@@ -3,7 +3,10 @@ import OpenAI from "openai";
 import * as fs from "fs";
 import * as path from "path";
 
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY,
+  baseURL: process.env.OPENAI_BASE_URL || undefined
+});
 
 // ─────────────────────────────────────────────
 // Language Detection
@@ -71,7 +74,7 @@ export const generateAIReply = async (
   ];
 
   const completion = await openai.chat.completions.create({
-    model: "gpt-4o",
+    model: process.env.OPENAI_MODEL || "gpt-4o",
     messages,
     max_tokens: 500,
     temperature: 0.7
