@@ -35,6 +35,7 @@ model Business {
   updatedAt   DateTime @updatedAt
   members     BusinessMember[]
   settings    BusinessSettings?
+  roles       Role[]
 }
 
 model BusinessSettings {
@@ -62,11 +63,13 @@ model Role {
   businessId  String
   business    Business @relation(fields: [businessId], references: [id])
   permissions RolePermission[]
+  members     BusinessMember[]
 }
 
 model Permission {
-  id   String @id @default(uuid())
-  name String @unique
+  id    String @id @default(uuid())
+  name  String @unique
+  roles RolePermission[]
 }
 
 model RolePermission {
