@@ -191,6 +191,32 @@ exports.Prisma.NotificationScalarFieldEnum = {
   createdAt: 'createdAt'
 };
 
+exports.Prisma.ConversationScalarFieldEnum = {
+  id: 'id',
+  waConversationId: 'waConversationId',
+  customerPhone: 'customerPhone',
+  customerName: 'customerName',
+  businessId: 'businessId',
+  status: 'status',
+  language: 'language',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+};
+
+exports.Prisma.MessageScalarFieldEnum = {
+  id: 'id',
+  conversationId: 'conversationId',
+  waMessageId: 'waMessageId',
+  direction: 'direction',
+  type: 'type',
+  content: 'content',
+  mediaUrl: 'mediaUrl',
+  transcription: 'transcription',
+  senderType: 'senderType',
+  language: 'language',
+  createdAt: 'createdAt'
+};
+
 exports.Prisma.SortOrder = {
   asc: 'asc',
   desc: 'desc'
@@ -212,7 +238,9 @@ exports.Prisma.ModelName = {
   Permission: 'Permission',
   RolePermission: 'RolePermission',
   AuditLog: 'AuditLog',
-  Notification: 'Notification'
+  Notification: 'Notification',
+  Conversation: 'Conversation',
+  Message: 'Message'
 };
 
 /**
