@@ -1,5 +1,5 @@
 // src/utils/prisma.ts
-import { PrismaClient } from "@prisma/client";
+import { PrismaClient } from "../generated/client";
 import { logger } from "../utils/logger";
 
 let prisma: PrismaClient;
