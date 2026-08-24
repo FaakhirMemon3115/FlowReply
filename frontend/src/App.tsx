@@ -212,7 +212,7 @@ export default function App() {
           </div>
           {healthStatus && (
             <div className="space-y-1">
-              <p className="text-xs text-slate-500">AI: <span className="text-purple-400 font-semibold">{healthStatus.ai === "ready" ? "GPT-4o Live" : "No Key"}</span></p>
+              <p className="text-xs text-slate-500">AI: <span className="text-purple-400 font-semibold">{healthStatus.ai === "ready" ? "GPT-4o Live" : healthStatus.ai === "mock" ? "Mock (Sandbox)" : "No Key"}</span></p>
               <p className="text-xs text-slate-500">WA: <span className="text-emerald-400 font-semibold">{healthStatus.whatsapp}</span></p>
             </div>
           )}

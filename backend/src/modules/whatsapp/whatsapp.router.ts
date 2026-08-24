@@ -1,7 +1,10 @@
 // src/modules/whatsapp/whatsapp.router.ts
 import { Router, Request, Response } from "express";
 import { parseWebhookPayload, processIncomingMessage } from "./whatsapp.service";
+import { getPrisma } from "../../utils/prisma";
 import { logger } from "../../utils/logger";
+
+const prisma = getPrisma();
 
 const router = Router();
 
@@ -51,11 +54,8 @@ router.post("/webhook", async (req: Request, res: Response) => {
 // ─────────────────────────────────────────────
 // GET /conversations — Fetch all conversations (for Dashboard)
 // ─────────────────────────────────────────────
-router.get("/conversations", async (req: Request, res: Response) => {
+router.get("/conversations", async (_req: Request, res: Response) => {
   try {
-    const { PrismaClient } = await import("../../generated/client");
-    const prisma = new PrismaClient();
-
     const conversations = await prisma.conversation.findMany({
       include: {
         messages: {
@@ -79,9 +79,6 @@ router.get("/conversations", async (req: Request, res: Response) => {
 // ─────────────────────────────────────────────
 router.get("/conversations/:id", async (req: Request, res: Response) => {
   try {
-    const { PrismaClient } = await import("../../generated/client");
-    const prisma = new PrismaClient();
-
     const conversation = await prisma.conversation.findUnique({
       where: { id: req.params.id },
       include: {

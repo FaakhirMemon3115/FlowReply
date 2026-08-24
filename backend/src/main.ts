@@ -27,8 +27,12 @@ app.use(express.urlencoded({ extended: true }));
 app.get("/health", (_req, res) => res.json({
   status: "ok",
   timestamp: new Date().toISOString(),
-  whatsapp: process.env.WA_PHONE_NUMBER_ID !== "YOUR_PHONE_NUMBER_ID" ? "connected" : "sandbox",
-  ai: process.env.OPENAI_API_KEY ? "ready" : "no-key"
+  whatsapp: process.env.USE_MOCK_WHATSAPP === "true"
+    ? "sandbox"
+    : (process.env.WA_PHONE_NUMBER_ID ? "connected" : "not-configured"),
+  ai: process.env.USE_MOCK_AI === "true"
+    ? "mock"
+    : (process.env.OPENAI_API_KEY ? "ready" : "no-key")
 }));
 
 // ─── Routes ───
@@ -50,7 +54,7 @@ const PORT = process.env.PORT || 4000;
 app.listen(PORT, () => {
   console.log(`🚀 Server listening on http://localhost:${PORT}`);
   console.log(`📱 WhatsApp Webhook: http://localhost:${PORT}/api/v1/whatsapp/webhook`);
-  console.log(`🤖 AI Mode: ${process.env.OPENAI_API_KEY ? "GPT-4o LIVE" : "No API Key"}`);
+  console.log(`🤖 AI Mode: ${process.env.USE_MOCK_AI === "true" ? "MOCK (Sandbox)" : (process.env.OPENAI_API_KEY ? "GPT-4o LIVE" : "No API Key")}`);
   console.log(`💬 Sandbox: ${process.env.USE_MOCK_WHATSAPP === "true" ? "ON" : "OFF (Real WhatsApp)"}`);
 });
 

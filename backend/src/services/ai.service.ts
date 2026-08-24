@@ -3,21 +3,34 @@ import OpenAI from "openai";
 import * as fs from "fs";
 import * as path from "path";
 
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-  baseURL: process.env.OPENAI_BASE_URL || undefined
-});
+const useMockAI = () => process.env.USE_MOCK_AI === "true";
+
+let openai: OpenAI | null = null;
+
+const getOpenAI = (): OpenAI => {
+  if (!openai) {
+    const apiKey = process.env.OPENAI_API_KEY;
+    if (!apiKey) {
+      throw new Error(
+        "OPENAI_API_KEY is required when USE_MOCK_AI=false. Set USE_MOCK_AI=true for local sandbox mode."
+      );
+    }
+    openai = new OpenAI({
+      apiKey,
+      baseURL: process.env.OPENAI_BASE_URL || undefined
+    });
+  }
+  return openai;
+};
 
 // ─────────────────────────────────────────────
 // Language Detection
 // Detect if text is: "en" | "roman_urdu" | "ur"
 // ─────────────────────────────────────────────
 export const detectLanguage = (text: string): "en" | "roman_urdu" | "ur" => {
-  // Urdu script Unicode range: 0600–06FF
   const urduScriptRegex = /[\u0600-\u06FF]/;
   if (urduScriptRegex.test(text)) return "ur";
 
-  // Roman Urdu keywords (common words used in Roman Urdu)
   const romanUrduKeywords = [
     "kya", "hai", "ho", "na", "kar", "mera", "meri", "teri", "tera",
     "aap", "tum", "main", "hum", "ap", "karo", "bhi", "nahi", "nhi",
@@ -33,9 +46,6 @@ export const detectLanguage = (text: string): "en" | "roman_urdu" | "ur" => {
   return "en";
 };
 
-// ─────────────────────────────────────────────
-// System Prompt by Language
-// ─────────────────────────────────────────────
 const getSystemPrompt = (lang: "en" | "roman_urdu" | "ur"): string => {
   const base = `You are FlowReply AI — a smart WhatsApp customer support and ecommerce assistant. 
 You help customers with: order status, product recommendations, shipping tracking, returns, and general support.
@@ -57,6 +67,33 @@ Example style: "Shukriya aap ki message ka. Aap ka order number batain taake mai
 Reply in clear, friendly English.`;
 };
 
+const mockAIReply = (
+  userMessage: string,
+  language: "en" | "roman_urdu" | "ur"
+): string => {
+  const lower = userMessage.toLowerCase();
+
+  if (language === "ur") {
+    if (lower.includes("order") || lower.includes("آرڈر")) {
+      return "شکریہ! میں نے آپ کا آرڈر چیک کیا۔ آپ کا آرڈر #FR-12345 ڈسپیچ ہو چکا ہے اور 2-3 دن میں پہنچ جائے گا۔ مزید مدد چاہیے تو بتائیں۔";
+    }
+    return "السلام علیکم! میں FlowReply AI Assistant ہوں۔ آپ کیسے مدد کر سکتا ہوں؟ آرڈر، شپنگ، یا پروڈucts کے بارے میں پوچھیں۔";
+  }
+
+  if (language === "roman_urdu") {
+    if (lower.includes("order")) {
+      return "Shukriya! Aap ka order #FR-12345 dispatch ho chuka hai aur 2-3 din mein deliver ho jayega. Aur kuch help chahiye to batain.";
+    }
+    return "Assalam o Alaikum! Main FlowReply AI Assistant hoon. Aap ki kya madad kar sakta hoon? Order, shipping ya products ke bare mein pooch sakte hain.";
+  }
+
+  if (lower.includes("order") || lower.includes("status") || lower.includes("track")) {
+    return "Thanks for reaching out! Your order #FR-12345 has been dispatched and should arrive in 2-3 business days. Need anything else?";
+  }
+
+  return "Hello! I'm FlowReply AI Assistant. How can I help you today? I can assist with orders, shipping, products, and returns.";
+};
+
 // ─────────────────────────────────────────────
 // Generate GPT-4o Text Reply
 // ─────────────────────────────────────────────
@@ -65,15 +102,19 @@ export const generateAIReply = async (
   conversationHistory: Array<{ role: "user" | "assistant"; content: string }> = []
 ): Promise<{ reply: string; language: "en" | "roman_urdu" | "ur" }> => {
   const language = detectLanguage(userMessage);
-  const systemPrompt = getSystemPrompt(language);
 
+  if (useMockAI()) {
+    return { reply: mockAIReply(userMessage, language), language };
+  }
+
+  const systemPrompt = getSystemPrompt(language);
   const messages: OpenAI.Chat.ChatCompletionMessageParam[] = [
     { role: "system", content: systemPrompt },
     ...conversationHistory,
     { role: "user", content: userMessage }
   ];
 
-  const completion = await openai.chat.completions.create({
+  const completion = await getOpenAI().chat.completions.create({
     model: process.env.OPENAI_MODEL || "gpt-4o",
     messages,
     max_tokens: 500,
@@ -88,9 +129,12 @@ export const generateAIReply = async (
 // Transcribe Voice Message (Whisper STT)
 // ─────────────────────────────────────────────
 export const transcribeAudio = async (audioFilePath: string): Promise<string> => {
-  const fileStream = fs.createReadStream(audioFilePath);
+  if (useMockAI()) {
+    return "mera order kahan hai bhai?";
+  }
 
-  const transcription = await openai.audio.transcriptions.create({
+  const fileStream = fs.createReadStream(audioFilePath);
+  const transcription = await getOpenAI().audio.transcriptions.create({
     file: fileStream,
     model: "whisper-1",
     response_format: "text"
@@ -104,22 +148,25 @@ export const transcribeAudio = async (audioFilePath: string): Promise<string> =>
 // Returns path to generated audio file
 // ─────────────────────────────────────────────
 export const textToSpeech = async (text: string, language: "en" | "roman_urdu" | "ur"): Promise<string> => {
-  // Use different voice/instructions based on language
-  const voice: "nova" | "alloy" | "shimmer" = language === "en" ? "nova" : "shimmer";
+  const tmpDir = path.join(process.cwd(), "tmp");
+  if (!fs.existsSync(tmpDir)) {
+    fs.mkdirSync(tmpDir, { recursive: true });
+  }
 
-  const response = await openai.audio.speech.create({
+  const outputPath = path.join(tmpDir, `tts_${Date.now()}.mp3`);
+
+  if (useMockAI()) {
+    fs.writeFileSync(outputPath, Buffer.from("mock-audio"));
+    return outputPath;
+  }
+
+  const voice: "nova" | "alloy" | "shimmer" = language === "en" ? "nova" : "shimmer";
+  const response = await getOpenAI().audio.speech.create({
     model: "tts-1",
     voice,
     input: text,
     response_format: "mp3"
   });
-
-  const outputPath = path.join(process.cwd(), "tmp", `tts_${Date.now()}.mp3`);
-
-  // Ensure tmp directory exists
-  if (!fs.existsSync(path.join(process.cwd(), "tmp"))) {
-    fs.mkdirSync(path.join(process.cwd(), "tmp"), { recursive: true });
-  }
 
   const buffer = Buffer.from(await response.arrayBuffer());
   fs.writeFileSync(outputPath, buffer);

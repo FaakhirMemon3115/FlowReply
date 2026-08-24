@@ -102,4 +102,31 @@ model Notification {
   createdAt  DateTime  @default(now())
 }
 
-// Add more models in later phases.
+// ---------- WhatsApp Conversations & Messages ----------
+model Conversation {
+  id               String    @id @default(uuid())
+  waConversationId String?   @unique // WhatsApp conversation ID from Meta
+  customerPhone    String // Customer WhatsApp number e.g. +923001234567
+  customerName     String? // Display name from WhatsApp profile
+  businessId       String?
+  status           String    @default("open") // open | closed | handover
+  language         String? // detected: en | roman_urdu | ur
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+  messages         Message[]
+}
+
+model Message {
+  id             String       @id @default(uuid())
+  conversationId String
+  conversation   Conversation @relation(fields: [conversationId], references: [id])
+  waMessageId    String?      @unique // WhatsApp message ID from Meta
+  direction      String // inbound | outbound
+  type           String // text | audio | image | document
+  content        String? // text content of message
+  mediaUrl       String? // URL of media file (voice/image)
+  transcription  String? // Whisper transcription if voice
+  senderType     String // customer | bot | agent
+  language       String? // detected language
+  createdAt      DateTime     @default(now())
+}

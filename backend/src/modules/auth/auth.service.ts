@@ -1,10 +1,11 @@
 // src/modules/auth/auth.service.ts
 import { RegisterInput, LoginInput } from "./validation/auth.schema";
-import { initPrisma } from "../../utils/prisma";
+import { getPrisma } from "../../utils/prisma";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
+import crypto from "crypto";
 
-const prisma = initPrisma();
+const prisma = getPrisma();
 
 const JWT_ACCESS_SECRET = process.env.JWT_ACCESS_SECRET || "access_secret";
 const JWT_REFRESH_SECRET = process.env.JWT_REFRESH_SECRET || "refresh_secret";
@@ -158,7 +159,7 @@ export const logoutUser = async (token: string) => {
 };
 
 const generateTokens = (userId: string) => {
-  const accessToken = jwt.sign({ userId }, JWT_ACCESS_SECRET, { expiresIn: "15m" });
-  const refreshToken = jwt.sign({ userId }, JWT_REFRESH_SECRET, { expiresIn: "7d" });
+  const accessToken = jwt.sign({ userId, type: "access" }, JWT_ACCESS_SECRET, { expiresIn: "15m" });
+  const refreshToken = jwt.sign({ userId, type: "refresh", jti: crypto.randomUUID() }, JWT_REFRESH_SECRET, { expiresIn: "7d" });
   return { accessToken, refreshToken };
 };

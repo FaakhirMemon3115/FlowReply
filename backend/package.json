@@ -8,10 +8,11 @@
     "dev": "ts-node-dev --respawn --transpile-only src/main.ts",
     "build": "tsc -p .",
     "start": "node dist/main.js",
+    "setup": "npm install && npx prisma generate && npx prisma db push",
     "lint": "eslint . --ext .ts",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
-    "seed": "ts-node src/prisma/seed.ts"
+    "prisma:push": "prisma db push"
   },
   "dependencies": {
     "@prisma/client": "^5.12.0",

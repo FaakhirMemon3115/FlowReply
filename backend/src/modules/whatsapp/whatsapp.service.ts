@@ -1,15 +1,15 @@
 // src/modules/whatsapp/whatsapp.service.ts
 // Core WhatsApp webhook processing logic
-import { PrismaClient } from "../../generated/client";
 import { generateAIReply, transcribeAudio, textToSpeech, detectLanguage } from "../../services/ai.service";
 import {
   sendTextMessage,
   sendAudioMessage,
   downloadMediaFile
 } from "../../services/whatsapp-api.service";
+import { getPrisma } from "../../utils/prisma";
 import { logger } from "../../utils/logger";
 
-const prisma = new PrismaClient();
+const prisma = getPrisma();
 
 // ─────────────────────────────────────────────
 // Parse Meta Webhook Payload
